@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Ajedrez Local</title>
+<style>
+  body { display:flex; justify-content:center; margin-top:20px; }
+  table { border-collapse: collapse; }
+  td {
+    width: 60px; height: 60px;
+    text-align: center; font-size: 32px;
+    cursor: pointer;
+  }
+  .white { background: #eee; }
+  .black { background: #666; color: white; }
+</style>
+</head>
+<body>
+
+<table id="board"></table>
+
+<script>
+const pieces = {
+  r:'♜', n:'♞', b:'♝', q:'♛', k:'♚', p:'♟',
+  R:'♖', N:'♘', B:'♗', Q:'♕', K:'♔', P:'♙'
+};
+
+let board = [
+  "rnbqkbnr",
+  "pppppppp",
+  "........",
+  "........",
+  "........",
+  "........",
+  "PPPPPPPP",
+  "RNBQKBNR"
+];
+
+let selected = null;
+
+function drawBoard() {
+  const table = document.getElementById("board");
+  table.innerHTML = "";
+  
+  for (let i=0;i<8;i++){
+    let row = document.createElement("tr");
+    for (let j=0;j<8;j++){
+      let cell = document.createElement("td");
+      cell.className = (i+j)%2==0 ? "white":"black";
+      let piece = board[i][j];
+      cell.textContent = pieces[piece] || "";
+      
+      cell.onclick = () => handleClick(i,j);
+      row.appendChild(cell);
+    }
+    table.appendChild(row);
+  }
+}
+
+function handleClick(i,j){
+  if(selected){
+    let piece = board[selected.i][selected.j];
+    board[selected.i] = replaceAt(board[selected.i], selected.j, ".");
+    board[i] = replaceAt(board[i], j, piece);
+    selected = null;
+  } else {
+    if(board[i][j] !== "."){
+      selected = {i,j};
+    }
+  }
+  drawBoard();
+}
+
+function replaceAt(str, index, chr) {
+  return str.substr(0,index) + chr + str.substr(index+1);
+}
+
+drawBoard();
+</script>
+
+</body>
+</html>
