@@ -20,12 +20,12 @@
 <table id="board"></table>
 
 <script>
-const pieces = {
+var pieces = {
   r:'♜', n:'♞', b:'♝', q:'♛', k:'♚', p:'♟',
   R:'♖', N:'♘', B:'♗', Q:'♕', K:'♔', P:'♙'
 };
 
-let board = [
+var board = [
   "rnbqkbnr",
   "pppppppp",
   "........",
@@ -36,21 +36,24 @@ let board = [
   "RNBQKBNR"
 ];
 
-let selected = null;
+var selected = null;
 
 function drawBoard() {
-  const table = document.getElementById("board");
+  var table = document.getElementById("board");
   table.innerHTML = "";
   
-  for (let i=0;i<8;i++){
-    let row = document.createElement("tr");
-    for (let j=0;j<8;j++){
-      let cell = document.createElement("td");
+  for (var i=0;i<8;i++){
+    var row = document.createElement("tr");
+    for (var j=0;j<8;j++){
+      var cell = document.createElement("td");
       cell.className = (i+j)%2==0 ? "white":"black";
-      let piece = board[i][j];
-      cell.textContent = pieces[piece] || "";
+      var piece = board[i][j];
+      cell.innerHTML = pieces[piece] || "";
       
-      cell.onclick = () => handleClick(i,j);
+      cell.onclick = (function(iCopy,jCopy){
+        return function(){ handleClick(iCopy,jCopy); };
+      })(i,j);
+
       row.appendChild(cell);
     }
     table.appendChild(row);
@@ -59,13 +62,13 @@ function drawBoard() {
 
 function handleClick(i,j){
   if(selected){
-    let piece = board[selected.i][selected.j];
+    var piece = board[selected.i][selected.j];
     board[selected.i] = replaceAt(board[selected.i], selected.j, ".");
     board[i] = replaceAt(board[i], j, piece);
     selected = null;
   } else {
     if(board[i][j] !== "."){
-      selected = {i,j};
+      selected = {i:i,j:j};
     }
   }
   drawBoard();
