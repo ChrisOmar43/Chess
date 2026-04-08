@@ -1,0 +1,184 @@
+/* Reset y base */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  background: #f0ece4;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1rem;
+}
+
+#app {
+  text-align: center;
+  max-width: 560px;
+  width: 100%;
+}
+
+h1 {
+  font-size: 1.6rem;
+  margin-bottom: .3rem;
+  color: #2c2c2c;
+}
+
+#status {
+  font-size: .95rem;
+  color: #555;
+  margin-bottom: .8rem;
+  min-height: 1.4em;
+}
+
+/* Controles */
+#controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: .8rem;
+}
+
+#move-counter {
+  font-weight: 600;
+  font-size: .9rem;
+  min-width: 130px;
+}
+
+button {
+  background: #7b6f63;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: .45rem .9rem;
+  font-size: .85rem;
+  cursor: pointer;
+  transition: background .2s;
+}
+button:hover { background: #5e544a; }
+button:disabled { opacity: .45; cursor: default; }
+
+/* Tablero */
+#board {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 3px solid #5e544a;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 0 auto;
+}
+
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+  transition: background .25s, transform .15s;
+}
+
+/* Colores del tablero */
+.cell.light { background: #f5e6ca; }
+.cell.dark  { background: #b8a088; }
+
+/* Casilla visitada */
+.cell.visited {
+  background: #a8c7e2 !important;
+  color: #2a5070;
+}
+
+/* Casilla con el caballo */
+.cell.current {
+  background: #6ab04c !important;
+  color: #fff;
+  z-index: 2;
+}
+
+/* Casillas posibles */
+.cell.possible {
+  cursor: pointer;
+}
+.cell.possible::after {
+  content: '';
+  position: absolute;
+  width: 32%;
+  height: 32%;
+  border-radius: 50%;
+  background: rgba(76, 175, 80, .45);
+  pointer-events: none;
+}
+
+/* Casilla sugerida (hint) */
+.cell.suggested {
+  box-shadow: inset 0 0 0 3px #f0c040;
+}
+
+/* Animacion del caballo */
+.cell .knight {
+  font-size: 2rem;
+  line-height: 1;
+  transition: opacity .2s;
+  animation: pop .25s ease;
+}
+@keyframes pop {
+  0%   { transform: scale(.3); opacity: 0; }
+  100% { transform: scale(1);  opacity: 1; }
+}
+
+/* Numero de paso */
+.cell .step-num {
+  font-size: .75rem;
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  color: inherit;
+  opacity: .8;
+}
+
+/* Record */
+#record {
+  margin-top: .6rem;
+  font-size: .85rem;
+  color: #777;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+.modal.hidden { display: none; }
+.modal-content {
+  background: #fff;
+  padding: 2rem 2.5rem;
+  border-radius: 12px;
+  text-align: center;
+  max-width: 320px;
+}
+.modal-content p {
+  font-size: 1.15rem;
+  margin-bottom: 1rem;
+}
+.modal-content button {
+  font-size: 1rem;
+  padding: .5rem 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 420px) {
+  .cell .knight { font-size: 1.4rem; }
+  .cell .step-num { font-size: .6rem; }
+  h1 { font-size: 1.3rem; }
+}

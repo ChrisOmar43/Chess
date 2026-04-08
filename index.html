@@ -1,291 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Ajedrez Local PRO</title>
-<style>
-  body { display:flex; justify-content:center; margin-top:20px; flex-direction:column; align-items:center;}
-  table { border-collapse: collapse; }
-  td {
-    width: 60px; height: 60px;
-    text-align: center; font-size: 32px;
-    cursor: pointer;
-  }
-  .white { background: #eee; }
-  .black { background: #666; color: white; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recorrido del Caballo</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <div id="app">
+    <h1>♞ Recorrido del Caballo</h1>
+    <p id="status">Haz clic en una casilla para colocar el caballo</p>
 
-<h3 id="status"></h3>
-<table id="board"></table>
+    <div id="controls">
+      <span id="move-counter">Movimientos: 0 / 64</span>
+      <button id="btn-restart">Reiniciar</button>
+      <button id="btn-hints" title="Mostrar/ocultar casillas posibles">Ayuda: ON</button>
+      <button id="btn-suggest" title="Sugerir mejor movimiento (Warnsdorff)" disabled>Pista</button>
+    </div>
 
-<script>
-var pieces = {
-  r:'♜', n:'♞', b:'♝', q:'♛', k:'♚', p:'♟',
-  R:'♖', N:'♘', B:'♗', Q:'♕', K:'♔', P:'♙'
-};
+    <div id="board"></div>
 
-var board = [
-  "rnbqkbnr",
-  "pppppppp",
-  "........",
-  "........",
-  "........",
-  "........",
-  "PPPPPPPP",
-  "RNBQKBNR"
-];
+    <div id="record">Mejor racha: <span id="best">0</span></div>
+  </div>
 
-var selected = null;
-var turn = "white";
-var lastMove = null;
-var moved = {};
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <p id="modal-msg"></p>
+      <button id="modal-close">OK</button>
+    </div>
+  </div>
 
-function isWhite(p){ return p===p.toUpperCase(); }
-function isBlack(p){ return p===p.toLowerCase(); }
-
-function drawBoard(){
-  var table = document.getElementById("board");
-  table.innerHTML="";
-  
-  for(var i=0;i<8;i++){
-    var row=document.createElement("tr");
-    for(var j=0;j<8;j++){
-      var cell=document.createElement("td");
-      cell.className=(i+j)%2==0?"white":"black";
-      var piece=board[i][j];
-      cell.innerHTML=pieces[piece]||"";
-
-      cell.onclick=(function(iCopy,jCopy){
-        return function(){ handleClick(iCopy,jCopy); };
-      })(i,j);
-
-      row.appendChild(cell);
-    }
-    table.appendChild(row);
-  }
-  updateStatus();
-}
-
-function updateStatus(){
-  var txt = turn === "white" ? "Turno: Blancas" : "Turno: Negras";
-  if(isCheck(turn)) txt += " (JAQUE)";
-  if(isCheckmate(turn)) txt += " (JAQUE MATE)";
-  document.getElementById("status").innerHTML = txt;
-}
-
-function handleClick(i,j){
-  var piece=board[i][j];
-
-  if(selected){
-    if(isValidMove(selected.i,selected.j,i,j)){
-      movePiece(selected.i,selected.j,i,j);
-      turn = turn==="white"?"black":"white";
-    }
-    selected=null;
-  }else{
-    if(piece!=="." && correctTurn(piece)){
-      selected={i:i,j:j};
-    }
-  }
-  drawBoard();
-}
-
-function correctTurn(p){
-  return (turn==="white" && isWhite(p)) || (turn==="black" && isBlack(p));
-}
-
-function movePiece(si,sj,di,dj){
-  var piece=board[si][sj];
-
-  // en passant
-  if(piece.toLowerCase()==='p' && sj!==dj && board[di][dj]==="."){
-    board[si] = replaceAt(board[si], dj, ".");
-  }
-
-  // castling
-  if(piece.toLowerCase()==='k' && Math.abs(dj-sj)===2){
-    if(dj===6){ // corto
-      var rook=board[si][7];
-      board[si]=replaceAt(board[si],7,".");
-      board[si]=replaceAt(board[si],5,rook);
-    }else if(dj===2){ // largo
-      var rook=board[si][0];
-      board[si]=replaceAt(board[si],0,".");
-      board[si]=replaceAt(board[si],3,rook);
-    }
-  }
-
-  board[si]=replaceAt(board[si],sj,".");
-  board[di]=replaceAt(board[di],dj,piece);
-
-  // promoción automática
-  if(piece==="P" && di===0) board[di]=replaceAt(board[di],dj,"Q");
-  if(piece==="p" && di===7) board[di]=replaceAt(board[di],dj,"q");
-
-  lastMove = {si:si,sj:sj,di:di,dj:dj,piece:piece};
-  moved[si+","+sj]=true;
-}
-
-function isValidMove(si,sj,di,dj){
-  var piece=board[si][sj];
-  var target=board[di][dj];
-
-  if(target!=="." && sameColor(piece,target)) return false;
-
-  var valid=false;
-  var dx=di-si;
-  var dy=dj-sj;
-
-  switch(piece.toLowerCase()){
-    case 'p': valid=pawnMove(piece,si,sj,di,dj); break;
-    case 'r': valid=rookMove(si,sj,di,dj); break;
-    case 'n': valid=knightMove(dx,dy); break;
-    case 'b': valid=bishopMove(si,sj,di,dj); break;
-    case 'q': valid=queenMove(si,sj,di,dj); break;
-    case 'k': valid=kingMove(piece,si,sj,di,dj); break;
-  }
-
-  if(!valid) return false;
-
-  // no dejarse en jaque
-  var backup=JSON.parse(JSON.stringify(board));
-  movePiece(si,sj,di,dj);
-  var check=isCheck(turn);
-  board=backup;
-
-  return !check;
-}
-
-function sameColor(a,b){
-  return (isWhite(a)&&isWhite(b))||(isBlack(a)&&isBlack(b));
-}
-
-function pawnMove(p,si,sj,di,dj){
-  var dir=isWhite(p)?-1:1;
-
-  if(sj===dj && board[di][dj]==="."){
-    if(di-si===dir) return true;
-
-    if((isWhite(p)&&si===6)||(isBlack(p)&&si===1)){
-      if(di-si===2*dir && board[si+dir][sj]===".") return true;
-    }
-  }
-
-  if(Math.abs(dj-sj)===1 && di-si===dir){
-    if(board[di][dj]!==".") return true;
-
-    // en passant
-    if(lastMove && lastMove.piece.toLowerCase()==='p'){
-      if(lastMove.di===si && lastMove.dj===dj){
-        if(Math.abs(lastMove.di-lastMove.si)===2) return true;
-      }
-    }
-  }
-  return false;
-}
-
-function rookMove(si,sj,di,dj){
-  if(si!==di && sj!==dj) return false;
-  return clearPath(si,sj,di,dj);
-}
-
-function bishopMove(si,sj,di,dj){
-  if(Math.abs(di-si)!==Math.abs(dj-sj)) return false;
-  return clearPath(si,sj,di,dj);
-}
-
-function queenMove(si,sj,di,dj){
-  return rookMove(si,sj,di,dj)||bishopMove(si,sj,di,dj);
-}
-
-function knightMove(dx,dy){
-  return (Math.abs(dx)===2 && Math.abs(dy)===1) ||
-         (Math.abs(dx)===1 && Math.abs(dy)===2);
-}
-
-function kingMove(p,si,sj,di,dj){
-  if(Math.abs(di-si)<=1 && Math.abs(dj-sj)<=1) return true;
-
-  // castling
-  if(Math.abs(dj-sj)===2 && di===si){
-    if(moved[si+","+sj]) return false;
-
-    if(dj===6){ // corto
-      if(board[si][5]==="." && board[si][6]==="." && !isCheck(turn)){
-        return true;
-      }
-    }
-    if(dj===2){ // largo
-      if(board[si][1]==="." && board[si][2]==="." && board[si][3]==="." && !isCheck(turn)){
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-function clearPath(si,sj,di,dj){
-  var stepI=(di-si===0)?0:(di-si)/Math.abs(di-si);
-  var stepJ=(dj-sj===0)?0:(dj-sj)/Math.abs(dj-sj);
-
-  var i=si+stepI;
-  var j=sj+stepJ;
-
-  while(i!==di || j!==dj){
-    if(board[i][j]!==".") return false;
-    i+=stepI;
-    j+=stepJ;
-  }
-  return true;
-}
-
-function isCheck(color){
-  var king = color==="white"?"K":"k";
-  var ki,kj;
-
-  for(var i=0;i<8;i++){
-    for(var j=0;j<8;j++){
-      if(board[i][j]===king){ ki=i; kj=j; }
-    }
-  }
-
-  for(var i=0;i<8;i++){
-    for(var j=0;j<8;j++){
-      var p=board[i][j];
-      if(p!=="." && !correctTurn(p)){
-        if(isValidMove(i,j,ki,kj)) return true;
-      }
-    }
-  }
-  return false;
-}
-
-function isCheckmate(color){
-  if(!isCheck(color)) return false;
-
-  for(var i=0;i<8;i++){
-    for(var j=0;j<8;j++){
-      var p=board[i][j];
-      if(p!=="." && ((color==="white"&&isWhite(p))||(color==="black"&&isBlack(p)))){
-        for(var x=0;x<8;x++){
-          for(var y=0;y<8;y++){
-            if(isValidMove(i,j,x,y)) return false;
-          }
-        }
-      }
-    }
-  }
-  return true;
-}
-
-function replaceAt(str,index,chr){
-  return str.substr(0,index)+chr+str.substr(index+1);
-}
-
-drawBoard();
-</script>
-
+  <script src="script.js"></script>
 </body>
 </html>
