@@ -1,2 +1,2 @@
 # Chess
-Una solucion para jugar ajedres en dispositivos viejos tipo ipad 3
+Una solucion para aprender a usar el caballo del agedrez

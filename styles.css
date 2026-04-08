@@ -122,8 +122,9 @@ button:disabled { opacity: .45; cursor: default; }
 
 /* Animacion del caballo */
 .cell .knight {
-  font-size: 2rem;
+  font-size: clamp(1.2rem, 5vw, 2rem);
   line-height: 1;
+  position: absolute;
   transition: opacity .2s;
   animation: pop .25s ease;
 }
